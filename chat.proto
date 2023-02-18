@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package grpc;
+
 
 // Specs for the user: the identifier and the logged-in username
 message User {
