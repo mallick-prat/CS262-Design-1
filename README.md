@@ -6,6 +6,7 @@ Current dependencies:
  - hashlib
  - protobuf I think?
  - betterproto[compiler]
+ - grpcio-tools
  - @grpc/proto-loader
 
  - brew
