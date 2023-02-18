@@ -12,10 +12,12 @@ def client_program():
 
     message = input(" -> ")  # take input
 
-    if message.lower().strip() == '/delete account':
+    message_string = message.lower().strip()
+
+    if message_string == '/delete account':
         Delete()
 
-    while message.lower().strip() != 'bye' & message.lower.strip() != '/delete account':
+    while message_string != 'bye' and message_string != '/delete account':
         client_socket.send(message.encode())  # send message
         data = client_socket.recv(1024).decode()  # receive response
 
@@ -52,7 +54,6 @@ def rmUserInfo(username):
                     output.write(user)
     
     os.replace('temp.txt', 'userInfo.txt')
-
 
 if __name__ == '__main__':
     client_program()
