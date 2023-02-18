@@ -4,3 +4,4 @@ Current dependencies:
  - getpass
  - stdiomask
  - hashlib
+ - @grpc/proto-loader
