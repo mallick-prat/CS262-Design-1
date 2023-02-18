@@ -33,11 +33,11 @@ service ChatFunctionality {
     rpc joinChat(User) returns (JoinAbility) {}
     
     // Prints out a list of accounts
-    rpc displayUserList(Empty) returns (UsernameList) {}
+    rpc displayUserList(baseMessage) returns (UsernameList) {}
 
     // To send a message, you need the 'specs' of what will be displayed
-    rpc sendMessage(MessageInfo) returns (Empty) {}
+    rpc sendMessage(MessageInfo) returns (baseMessage) {}
     
     // To receive a message, you want to generate a stream of MessageInfo entries
-    rpc receiveMessage(Empty) returns (stream MessageInfo) {}
+    rpc receiveMessage(baseMessage) returns (stream MessageInfo) {}
 }
