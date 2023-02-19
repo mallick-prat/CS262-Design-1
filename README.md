@@ -8,6 +8,7 @@ Current dependencies:
  - betterproto[compiler]
  - grpcio-tools
  - @grpc/proto-loader
+ - unittest
 
  - brew
  - pip
