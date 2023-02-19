@@ -3,7 +3,7 @@ import hashlib
 from http import client
 import os
 import socket
-clear = lambda: os.system('cls')
+clear = lambda: os.system('clear')
 
 
 session_username = ""

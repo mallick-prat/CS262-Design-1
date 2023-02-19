@@ -1,6 +1,6 @@
 import socket
 import os
-clear = lambda: os.system('cls')
+clear = lambda: os.system('clear')
 
 
 def client_program():
