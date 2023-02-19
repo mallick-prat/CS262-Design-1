@@ -203,9 +203,9 @@ def Login():
         while True:
             try:
                 # Receive Message From Server
-                # If 'NICK' Send Nickname
+                # If 'USER' Send Username
                 message = client.recv(1024).decode('ascii')
-                if message == 'NICK':
+                if message == 'USER':
                     client.send(session_username.encode('ascii'))
                 else:
                     print(message)
@@ -218,7 +218,11 @@ def Login():
     def write():
         while True:
             message = '{}: {}'.format(session_username, input(''))
-            client.send(message.encode('ascii'))
+            if message[len(session_username)+2:].startswith('/delete'):
+                client.send(f'DELETE {session_username}'.encode('ascii'))
+                Delete(session_username)
+            else: 
+                client.send(message.encode('ascii'))
 
     # run client and write threads 
 
@@ -350,7 +354,7 @@ def check_password_hash(password, hash):
 # DELETE: Allows an existing, logged-in user to delete their account
     ## Requires user to confirm before proceeding
     ## If user does not type 'Y' or 'N', they will keep being prompted for input
-def Delete():
+def Delete(session_username):
     clear()
     print("DELETE ACCOUNT")
     print("--------")
@@ -358,7 +362,7 @@ def Delete():
     while True:
         confirm = input("Are you sure you want to delete? Type (Y) for yes and (N) for no: ").lower()
         if confirm == 'y':
-            rmUserInfo()
+            rmUserInfo(session_username)
             break
         elif confirm != 'n':
             print("Please enter a valid input.")
