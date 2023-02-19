@@ -15,6 +15,8 @@ session_username = ""
     ## If the user types '3', they will actually also go to the login page.
     ## But, they will first see a message that shows how to delete an account.
     ## For security purposes, one can only delete an account once they are logged in.
+    ## If the user types '4', they will generate a list of all current account usernames.
+    ## If the user types '5', they can search for a specific user by typing in the first letter of the user's username.
 def main():
 
     # Rendering initial visuals; presenting users with login options
@@ -49,19 +51,25 @@ def main():
     
     elif userChoice == '4': # user wants to print out all usernames
         lines_printed = 0
-        with open('userInfo.txt', 'r') as file:
+
+        with open('userInfo.txt', 'r') as file: # reads user info
             for line in file:
                 line_str = line.split()
-                print(line_str[0])
+                print(line_str[0]) # prints only the username shown on each line
                 lines_printed += 1
+
+                # If no usernames were printed, display this message (so the user knows that the search still happened)
                 if lines_printed == 0:
                     print("No usernames currently in database.")
         
+        # Help redirect user since they are probably done with this functionality after receiving the list
         while True:
             returnChoice = input("Return to main menu? (Y) or (N)").lower()
+            
             if returnChoice == 'y':
                 main()
                 break
+            
             elif returnChoice == 'n':
                 break
 
@@ -71,25 +79,27 @@ def main():
         while True:
             alpha_range = input("Enter the first letter of the username you're looking for: ").upper()
             
+            # We just included a fun little easter egg in case the people grading us happen to find it in the code review :)
             if alpha_range == "EASTEREGG":
                 print("Congratulations! YOU FOUND THE EASTER EGG!")
                 print("ʕ•́ᴥ•̀ʔっ♡")
                 break
             
-            if alpha_range.isalpha():
+            if alpha_range.isalpha(): # ensures that the user input is actually a letter
                 break
 
         lines_printed = 0
-        with open('userInfo.txt', 'r') as file:
+        with open('userInfo.txt', 'r') as file: # reads user info
             for line in file:
                 line_str = line.split()
-                if line_str[0][0] == alpha_range:
-                    print(line_str[0])
+
+                if line_str[0][0] == alpha_range: # if the first letter of the username is the desired letter...
+                    print(line_str[0]) # then print the username
                     lines_printed += 1
+
+            # If no usernames were printed, display this message (so the user knows that the search still happened)
             if lines_printed == 0 and alpha_range != 'EASTEREGG':
                 print("No usernames starting with " + alpha_range)
-
-
 
 
 
@@ -120,9 +130,8 @@ def Register():
     else: # this is a new user with a valid username
 
         while True: # password prompt
-            userPassword = getpass("Enter (Unprivate) Password: ")
+            userPassword = getpass("Enter Password: ")
             if userPassword != '':
-                # print("Please enter a username.")
                 break
 
         while True: # password confirm
@@ -141,7 +150,7 @@ def Register():
         print()
         print("Registered! (:)>")
         print("If you would like to delete your account, please type '/delete account' at any time.")
-        client_program()
+        client_program() # directs logged-in user to the chat functionality
 
 
 
@@ -176,7 +185,7 @@ def Login():
             print()
 
             if loginAttempts >= 10: # if user has tried too many times, they likely don't have an account
-                spamLogins()
+                spamLogins() # help redirect the user
 
         else: # catches username edge cases
             break
@@ -187,7 +196,7 @@ def Login():
 
         userPassword = getpass("Enter Your Password: ")
 
-        if not check_password_hash(userPassword, usersInfo[userName]):
+        if not check_password_hash(userPassword, usersInfo[userName]): # checks if correct password
             loginAttempts += 1
             print("Incorrect Password. Try again, silly.")
             print()
@@ -203,16 +212,18 @@ def Login():
     print()
     print("Logged In! (:)>")
     print("If you would like to delete your account, please type '/delete account' at any time.")
-    client_program()
+    client_program() # directs logged-in user to the chat functionality
 
 
 
-# ADDUSERINFO: Appends the user's information to the txt file with all logins and passwords
+# ADDUSERINFO: Appends the user's information to the txt file with all logins and password hashes
+    ## Sample format for a line in userInfo.txt: usernamehere PaSsWoRdHaShHeRe
+    ## Formula for a line in userInfo.txt: [username] + [space] + [password hash] + [newline]
 def addUserInfo(userInfo: list):
     with open('userInfo.txt', 'a') as file:
         for info in userInfo:
             file.write(info)
-            file.write(' ') ## QUESTION: WHY DO WE NEED THE SPACE
+            file.write(' ') # adds a space between username and password hash
         file.write('\n')
 
 
@@ -225,7 +236,7 @@ def userAlreadyExist(userName, userPassword=None):
     
     if userPassword == None:
 
-        ## QUESTION: explain what this does
+        # Returns true if the current username is in the list and false if not
         with open('userInfo.txt', 'r') as file:
             for line in file:
                 line = line.split()
@@ -251,7 +262,7 @@ def userAlreadyExist(userName, userPassword=None):
         if usersInfo == {}:
             return False # therefore, we know that the user does not yet exist
 
-        # QUESTION: WHY IS THIS THE RETURN VALUE    
+        # A user with a valid username can only be in the system if this boolean is TRUE    
         return usersInfo[userName] == userPassword
 
 
@@ -326,6 +337,10 @@ def check_password_hash(password, hash):
     return hash_password(password) == hash
 
 
+
+# CLIENTPROGRAM: Defines network connection and message-sending logic for the client side
+    ## If user types 'bye', they can end the conversation.
+    ## If user types '/delete account', they can erase their messaging account.
 def client_program():
     host = socket.gethostname()  # as both code is running on same pc
     port = 8000  # socket server port number
@@ -335,12 +350,13 @@ def client_program():
 
     message = input(" -> ")  # take input
 
-    if message.lower().strip() == '/delete account':
+    message_string = message.lower().strip()  # formats message properly
+
+    # If the user wants to delete their account, they can trigger this by typing "/delete account"
+    if message_string == '/delete account':
         Delete()
 
-    message_string = message.lower().strip()
-
-    while message_string != 'bye' and message_string != '/delete account':
+    while message_string != 'bye' and message_string != '/delete account':  # excludes our two edge cases
         client_socket.send(message.encode())  # send message
         data = client_socket.recv(1024).decode()  # receive response
 
@@ -359,23 +375,34 @@ def Delete():
     print("DELETE ACCOUNT")
     print("--------")
     print()
+
+    # Verifies the account deletion with user before proceeding
     while True:
         confirm = input("Are you sure you want to delete? Type (Y) for yes and (N) for no: ").lower()
+        
         if confirm == 'y':
-            rmUserInfo(session_username)
+            rmUserInfo()
             break
+        
         elif confirm != 'n':
             print("Please enter a valid input.")
 
 
-
+# RMUSERINFO: Helper function; performs the actual logic behind deleting a user's account username and password.
 def rmUserInfo(username):
+
+    # First reads userInfo.txt as input (this is the original set of accounts)
     with open('userInfo.txt', 'r') as input:
+
+        # Writes a copy of the original set of accounts to a temp txt file...
         with open('temp.txt', 'w') as output:
+            
+            # For every account BUT the account that needs to be deleted
             for user in input:
                 if username not in user.strip(""):
                     output.write(user)
     
+    # Replaces the old userInfo.txt with our updated list that was saved in temp.txt
     os.replace('temp.txt', 'userInfo.txt')
 
 
