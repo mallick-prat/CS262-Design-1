@@ -2,7 +2,9 @@ import socket
 import threading 
 import os
 from getpass import getpass
+from getpass import getuser 
 import hashlib
+import time
 
 clear = lambda: os.system('clear')
 
@@ -17,6 +19,7 @@ def main():
 
     # Rendering initial visuals; presenting users with login options
     clear()
+    loggedIn = False 
 
     print("MessageBase -- CS 262\n")
     print("---------")
@@ -132,6 +135,8 @@ def Register():
 
         print()
         print("Registered! (:)>")
+        input("Press enter to continue:")
+        main()
         ####### return to main menu
 
 
@@ -148,11 +153,20 @@ def Login():
     print()
 
     usersInfo = {} # initializes an empty dictionary for which to store the verified login information
+    authuser = [] # empty dictionary to store auth users
 
     with open('userInfo.txt', 'r') as file: # fills the dictionary using the format 'username: password' with one entry per user
         for line in file:
             line = line.split()
             usersInfo.update({line[0]: line[1]})
+
+    with open('authuser.txt') as f:
+        lines = f.readlines()
+    # Loop through the lines and add them to the list
+    for line in lines:
+        line = line.strip()
+        authuser.append(line)
+
 
     while True:
 
@@ -160,11 +174,18 @@ def Login():
 
         userName = input("Enter Your User Name: ").title() # collects and sanitizes unverified username
         userName = sanitizeName(userName)
+        
+        for authuser in authuser: 
+            if authuser == userName:
+                print("You are already logged in.")
+                input("You will now be redirected to the main menu. Press enter to continue:").lower()
+                main()
 
         if userName not in usersInfo: # checks to see if username is in database
             loginAttempts += 1
             print("Not a registered username. Please try again, silly.")
-            print()
+            input('Press enter to continue.')
+            main()
 
             if loginAttempts >= 10: # if user has tried too many times, they likely don't have an account
                 spamLogins()
@@ -187,7 +208,8 @@ def Login():
                 spamLogins()
 
         else: # user has entered correct password
-            break
+            addNewAuth(userName)
+            break 
 
     # User has successfully logged in; print success message    
     session_username = userName
@@ -221,6 +243,9 @@ def Login():
             if message[len(session_username)+2:].startswith('/delete'):
                 client.send(f'DELETE {session_username}'.encode('ascii'))
                 Delete(session_username)
+            if message[len(session_username)+2:].startswith('/logout'):
+                rmAuthUser(session_username)
+                main()
             else: 
                 client.send(message.encode('ascii'))
 
@@ -241,6 +266,11 @@ def addUserInfo(userInfo: list):
             file.write(' ') ## QUESTION: WHY DO WE NEED THE SPACE
         file.write('\n')
 
+def addNewAuth(newauth: list):
+     with open('authuser.txt', 'a') as file:
+        for info in newauth:
+            file.write(info)
+        file.write('\n')
 
 
 # USERALREADYEXIST: Given a username, checks if an account exists under a specific username and password
@@ -363,11 +393,11 @@ def Delete(session_username):
         confirm = input("Are you sure you want to delete? Type (Y) for yes and (N) for no: ").lower()
         if confirm == 'y':
             rmUserInfo(session_username)
+            rmAuthUser(session_username)
+            main()
             break
         elif confirm != 'n':
             print("Please enter a valid input.")
-
-
 
 def rmUserInfo(username):
     with open('userInfo.txt', 'r') as input:
@@ -377,6 +407,14 @@ def rmUserInfo(username):
                     output.write(user)
     
     os.replace('temp.txt', 'userInfo.txt')
+
+def rmAuthUser(session_username):
+    with open('authuser.txt', 'r') as input:
+        with open('temp1.txt', 'w') as output:
+            for user in input:
+                if session_username not in user.strip(""):
+                    output.write(user)
+    os.replace('temp1.txt', 'authuser.txt')
 
 if __name__ == "__main__":
     main()
