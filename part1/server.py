@@ -5,7 +5,7 @@ import os
 clear = lambda: os.system('clear')
 
 #localhost / add functionality to define host/port connection --> ergo web server between different machines. 
-host = '127.0.0.1'
+host = '10.250.11.170'
 port = 55556
 
 # Starting Server

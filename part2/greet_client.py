@@ -16,7 +16,7 @@ def talk_to_server():
         time.sleep(1)
 
 def run():
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel('10.250.11.170:50051') as channel:
         stub = greet_pb2_grpc.GreeterStub(channel)
         print("GRPC MessageBase -- CS 262\n")
         print("---------")

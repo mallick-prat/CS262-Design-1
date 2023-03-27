@@ -219,7 +219,7 @@ def Login():
     print("Your username is:", session_username)
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('127.0.0.1', 55556))
+    client.connect(('10.250.11.170', 55556))
 
     def receive():
         while True:

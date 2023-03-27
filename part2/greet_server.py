@@ -47,7 +47,7 @@ class GreeterServicer(greet_pb2_grpc.GreeterServicer):
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     greet_pb2_grpc.add_GreeterServicer_to_server(GreeterServicer(), server)
-    server.add_insecure_port("localhost:50051")
+    server.add_insecure_port("10.250.11.170:50051")
     server.start()
     server.wait_for_termination()
 
