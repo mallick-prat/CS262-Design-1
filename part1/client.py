@@ -1,6 +1,8 @@
 import socket
 import threading 
 import os
+import select
+import errno
 from getpass import getpass
 from getpass import getuser 
 import hashlib
@@ -415,6 +417,41 @@ def rmAuthUser(session_username):
                 if session_username not in user.strip(""):
                     output.write(user)
     os.replace('temp1.txt', 'authuser.txt')
+
+
+import socket
+import select
+import errno
+
+class Client:
+    def __init__(self):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    def connect(self, host, port):
+        self.client_socket.connect((host, port))
+
+    def receive_message(self):
+        try:
+            message_header = self.client_socket.recv(HEADER_LENGTH)
+            if not len(message_header):
+                return False
+
+            message_length = int(message_header.decode("utf-8").strip())
+            return {"header": message_header, "data": self.client_socket.recv(message_length)}
+
+        except:
+            return False
+
+    def send_message(self, message):
+        message = message.encode("utf-8")
+        message_header = f"{len(message):<{HEADER_LENGTH}}".encode("utf-8")
+        self.client_socket.send(message_header + message)
+
+    def get_username(self):
+        username = input("Enter your username: ")
+        return username
+
 
 if __name__ == "__main__":
     main()

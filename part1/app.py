@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from client import Client
+from client import *
 
 app = Flask(__name__)
 client = Client()
