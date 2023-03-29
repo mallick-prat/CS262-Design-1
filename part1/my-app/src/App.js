@@ -1,25 +1,26 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import Chat from './components/Chat';
+import Login from './components/Login';
+import io from 'socket.io-client';
 
-function App() {
+const App = () => {
+  const [username, setUsername] = useState('');
+  const [room, setRoom] = useState('');
+
+  const handleLogin = (username, room) => {
+    setUsername(username);
+    setRoom(room);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      {username && room ? (
+        <Chat username={username} room={room} />
+      ) : (
+        <Login handleLogin={handleLogin} />
+      )}
     </div>
   );
-}
+};
 
 export default App;
