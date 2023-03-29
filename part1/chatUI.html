@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Application</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <h1>Chat Application</h1>
+    </div>
+    <div class="chat-messages" id="messages"></div>
+    <div class="chat-form">
+      <form id="message-form" action="{{ url_for('send_message') }}" method="POST">
+        <input type="text" id="message-input" placeholder="Type your message...">
+        <button type="submit" id="send-button">Send</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const messagesContainer = document.getElementById('messages');
+
+    messageForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      const message = messageInput.value;
+
+      // Make an AJAX request to send the message to the server
+      fetch('/send_message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message })
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Display the new message in the chat interface
+        const newMessage = document.createElement('div');
+        newMessage.textContent = data.message;
+        messagesContainer.appendChild(newMessage);
+
+        // Clear the input field
+        messageInput.value = '';
+      })
+      .catch(error => {
+        console.error('Error sending message:', error);
+      });
+    });
+  </script>
+</body>
+</html>

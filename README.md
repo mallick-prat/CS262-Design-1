@@ -48,3 +48,4 @@
  - Necessary packages for React
  - Axios
  - socket.io-client
+ - Flask
