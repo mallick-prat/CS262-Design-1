@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import io from 'socket.io-client';
+import io from "socket.io-client/dist/socket.io.js";
 import ChatRoom from './ChatRoom';
 import ChatInput from './ChatInput';
 import UserList from './UserList';
 import axios from 'axios';
+
+const socket = io("http://localhost:5000");
 
 const Chat = ({ username, room }) => {
   const [messages, setMessages] = useState([]);
