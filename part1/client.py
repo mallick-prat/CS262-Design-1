@@ -7,6 +7,7 @@ from getpass import getpass
 from getpass import getuser 
 import hashlib
 import time
+import sqlite3
 
 clear = lambda: os.system('clear')
 
@@ -268,6 +269,13 @@ def addUserInfo(userInfo: list):
             file.write(' ') ## QUESTION: WHY DO WE NEED THE SPACE
         file.write('\n')
 
+    # Adds it to the SQL database
+    conn = sqlite3.connect("chat.db")
+    c = conn.cursor()
+    c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (userInfo[0], userInfo[1]))
+    conn.commit()
+    conn.close()
+
 def addNewAuth(newauth: list):
      with open('authuser.txt', 'a') as file:
         for info in newauth:
@@ -410,6 +418,14 @@ def rmUserInfo(username):
     
     os.replace('temp.txt', 'userInfo.txt')
 
+    # Remove from SQL database
+    # DELETE FROM users WHERE username == username;
+    conn = sqlite3.connect("chat.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM users WHERE username = 'username'");
+    conn.commit()
+    conn.close()
+
 def rmAuthUser(session_username):
     with open('authuser.txt', 'r') as input:
         with open('temp1.txt', 'w') as output:
@@ -417,40 +433,6 @@ def rmAuthUser(session_username):
                 if session_username not in user.strip(""):
                     output.write(user)
     os.replace('temp1.txt', 'authuser.txt')
-
-
-import socket
-import select
-import errno
-
-class Client:
-    def __init__(self):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    def connect(self, host, port):
-        self.client_socket.connect((host, port))
-
-    def receive_message(self):
-        try:
-            message_header = self.client_socket.recv(HEADER_LENGTH)
-            if not len(message_header):
-                return False
-
-            message_length = int(message_header.decode("utf-8").strip())
-            return {"header": message_header, "data": self.client_socket.recv(message_length)}
-
-        except:
-            return False
-
-    def send_message(self, message):
-        message = message.encode("utf-8")
-        message_header = f"{len(message):<{HEADER_LENGTH}}".encode("utf-8")
-        self.client_socket.send(message_header + message)
-
-    def get_username(self):
-        username = input("Enter your username: ")
-        return username
 
 
 if __name__ == "__main__":

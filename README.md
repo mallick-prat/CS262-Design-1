@@ -45,7 +45,4 @@
  - brew
  - pip
  - newest version of Python
- - Necessary packages for React
- - Axios
- - socket.io-client
- - Flask
+ - sqlite3

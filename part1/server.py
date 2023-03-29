@@ -1,6 +1,7 @@
 import socket
 import threading
-import os 
+import os
+import sqlite3
 
 clear = lambda: os.system('clear')
 
@@ -59,7 +60,6 @@ def Delete(input):
             print("Please enter a valid input.")
 
 
-
 def rmUserInfo(username):
     with open('userInfo.txt', 'r') as input:
         with open('temp.txt', 'w') as output:
@@ -68,6 +68,15 @@ def rmUserInfo(username):
                     output.write(user)
     
     os.replace('temp.txt', 'userInfo.txt')
+
+    # Remove from SQL database
+    # DELETE FROM users WHERE username == username;
+    conn = sqlite3.connect("chat.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM users WHERE username = 'username'");
+    conn.commit()
+    conn.close()
+
 
 def receive():
     while True:
