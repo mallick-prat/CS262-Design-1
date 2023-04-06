@@ -1,12 +1,12 @@
 import socket
 import threading
-import os 
+import os
+import sqlite3
 
 clear = lambda: os.system('clear')
 
 #localhost / add functionality to define host/port connection --> ergo web server between different machines. 
-# host = '10.250.11.170'
-host = '127.0.0.1'
+host = '10.250.11.170'
 port = 55556
 
 # Starting Server
@@ -60,7 +60,6 @@ def Delete(input):
             print("Please enter a valid input.")
 
 
-
 def rmUserInfo(username):
     with open('userInfo.txt', 'r') as input:
         with open('temp.txt', 'w') as output:
@@ -69,6 +68,15 @@ def rmUserInfo(username):
                     output.write(user)
     
     os.replace('temp.txt', 'userInfo.txt')
+
+    # Remove from SQL database
+    # DELETE FROM users WHERE username == username;
+    conn = sqlite3.connect("chat.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM users WHERE username = 'username'");
+    conn.commit()
+    conn.close()
+
 
 def receive():
     while True:

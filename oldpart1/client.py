@@ -1,10 +1,13 @@
 import socket
 import threading 
 import os
+import select
+import errno
 from getpass import getpass
 from getpass import getuser 
 import hashlib
 import time
+import sqlite3
 
 clear = lambda: os.system('clear')
 
@@ -219,8 +222,7 @@ def Login():
     print("Your username is:", session_username)
 
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # client.connect(('10.250.11.170', 55556))
-    client.connect(('127.0.0.1', 55556))
+    client.connect(('10.250.11.170', 55556))
 
     def receive():
         while True:
@@ -266,6 +268,13 @@ def addUserInfo(userInfo: list):
             file.write(info)
             file.write(' ') ## QUESTION: WHY DO WE NEED THE SPACE
         file.write('\n')
+
+    # Adds it to the SQL database
+    conn = sqlite3.connect("chat.db")
+    c = conn.cursor()
+    c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (userInfo[0], userInfo[1]))
+    conn.commit()
+    conn.close()
 
 def addNewAuth(newauth: list):
      with open('authuser.txt', 'a') as file:
@@ -409,6 +418,14 @@ def rmUserInfo(username):
     
     os.replace('temp.txt', 'userInfo.txt')
 
+    # Remove from SQL database
+    # DELETE FROM users WHERE username == username;
+    conn = sqlite3.connect("chat.db")
+    c = conn.cursor()
+    c.execute("DELETE FROM users WHERE username = 'username'");
+    conn.commit()
+    conn.close()
+
 def rmAuthUser(session_username):
     with open('authuser.txt', 'r') as input:
         with open('temp1.txt', 'w') as output:
@@ -416,6 +433,7 @@ def rmAuthUser(session_username):
                 if session_username not in user.strip(""):
                     output.write(user)
     os.replace('temp1.txt', 'authuser.txt')
+
 
 if __name__ == "__main__":
     main()
