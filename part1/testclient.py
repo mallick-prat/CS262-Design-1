@@ -89,7 +89,6 @@ def main():
             if lines_printed == 0 and alpha_range != 'EASTEREGG':
                 print("No usernames starting with " + alpha_range)
 
-
 # REGISTER: Allows a new user to create a username and password to be entered into our database.
     ## Username and password can be used upon subsequent visits to login
     ## User cannot provide a blank or existing username
@@ -219,37 +218,6 @@ def Login():
     print("If you would like to delete your account, please type '/delete account' at any time.")
     print("Your username is:", session_username)
 
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # client.connect(('10.250.11.170', 55556))
-    client.connect(('127.0.0.1', 55556))
-
-    def receive():
-        while True:
-            try:
-                # Receive Message From Server
-                # If 'USER' Send Username
-                message = client.recv(1024).decode('ascii')
-                if message == 'USER':
-                    client.send(session_username.encode('ascii'))
-                else:
-                    print(message)
-            except:
-                # Close Connection When Error
-                print("An error occured!")
-                client.close()
-                break 
-
-    def write():
-        while True:
-            message = '{}: {}'.format(session_username, input(''))
-            if message[len(session_username)+2:].startswith('/delete'):
-                client.send(f'DELETE {session_username}'.encode('ascii'))
-                Delete(session_username)
-            if message[len(session_username)+2:].startswith('/logout'):
-                rmAuthUser(session_username)
-                main()
-            else: 
-                client.send(message.encode('ascii'))
 
     # run client and write threads 
 

@@ -1,12 +1,10 @@
 import socket
 import threading
-import os
-from database import create_connection
+import os 
 
 clear = lambda: os.system('clear')
 
 #localhost / add functionality to define host/port connection --> ergo web server between different machines. 
-# host = '10.250.11.170'
 host = '127.0.0.1'
 port = 55556
 
@@ -19,33 +17,17 @@ server.listen()
 clients = []
 usernames = []
 
-# Read the current session ID from the file
-with open('session_id.txt', 'r') as f:
-    session_id = int(f.read().strip())
-
-
 # receive message from client, then broadcast to other clients; run this function in each thread per client. 
 def handle(client):
     while True:
         try:
             # Broadcasting Messages
             msg = message = client.recv(1024)
-            
-            # Add message to database
-            conn = create_connection()
-            c = conn.cursor()
-            c.execute('''INSERT INTO messages (sender, message, session_id)
-                        VALUES (?, ?, ?)''', (client, msg.decode('ascii'), session_id))
-            conn.commit()
-            conn.close()
-
             if msg.decode('ascii').startswith('DELETE'):
                 accountDeleted = msg.decode('ascii')[5:]
                 print(accountDeleted)
             else:
-                # Send message
                 broadcast(message)
-                
         except:
             # Removing And Closing Clients
             index = clients.index(client)
@@ -109,12 +91,4 @@ def receive():
         thread.start()
 
 print("Server is listening for new connections...")
-
-# Increment the session ID and write it back to the file
-session_id += 1
-with open('session_id.txt', 'w') as f:
-    f.write(str(session_id))
-
-print("Session ID is " + str(session_id))
-
 receive()
