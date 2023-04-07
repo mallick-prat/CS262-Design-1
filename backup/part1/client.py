@@ -4,7 +4,7 @@ import os
 from getpass import getpass
 from getpass import getuser 
 import hashlib
-import time
+from time import sleep
 #import sqlite3
 from database import create_connection
 
@@ -33,12 +33,13 @@ def main():
     print("4 - Display User List")
     print("5 - Search for User(s)")
     print("6 - Re-Generate Chat")
+    print("7 - Replay Chat")
     print()
 
     # Logic to direct users to the correct functionality based on the option they choose
     while True:
         userChoice = input("Choose An Option: ")
-        if userChoice in ['1', '2', '3', '4', '5', '6']:
+        if userChoice in ['1', '2', '3', '4', '5', '6', '7']:
             break
 
     if userChoice == '1': # new user wants to register
@@ -105,7 +106,31 @@ def main():
             print(row[0] + ": '" + row[1] + "'; sent at " + row[2])
             lines_printed += 1
         if lines_printed == 0:
-            print("No messages found for session_id", session_id)
+            print("No messages have been sent within this session yet.")
+
+        while True:
+            returnChoice = input("Return to main menu? (Y) or (N)").lower()
+            if returnChoice == 'y':
+                main()
+                break
+            elif returnChoice == 'n':
+                break
+
+    elif userChoice == '7': # Print messages for a specific session_id with waits, so it looks like you're rewatching
+        with open('session_id.txt', 'r') as f:
+            session_id = f.read().strip()
+
+        lines_printed = 0
+        conn = create_connection()
+        c = conn.cursor()
+        c.execute("SELECT sender, message FROM messages WHERE session_id=?", (session_id,))
+        results = c.fetchall()
+        for row in results:
+            print(row[0] + ": '" + row[1] + "'")
+            lines_printed += 1
+            sleep(1)
+        if lines_printed == 0:
+            print("No messages have been sent within this session yet.")
 
         while True:
             returnChoice = input("Return to main menu? (Y) or (N)").lower()
