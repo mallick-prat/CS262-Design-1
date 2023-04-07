@@ -1,6 +1,7 @@
 import socket
 import threading
-import os 
+import os
+from database import create_connection
 
 clear = lambda: os.system('clear')
 
@@ -33,7 +34,17 @@ def handle(client):
                 accountDeleted = msg.decode('ascii')[5:]
                 print(accountDeleted)
             else:
+                # Add message to database
+                conn = create_connection()
+                c = conn.cursor()
+                c.execute('''INSERT INTO messages (sender, message, session_id)
+                            VALUES (?, ?, ?)''', (client, msg.decode('ascii'), session_id))
+                conn.commit()
+                conn.close()
+
+                # Send message
                 broadcast(message)
+                
         except:
             # Removing And Closing Clients
             index = clients.index(client)
@@ -103,6 +114,6 @@ session_id += 1
 with open('session_id.txt', 'w') as f:
     f.write(str(session_id))
 
-print(session_id)
+print("Session ID is " + session_id)
 
 receive()
