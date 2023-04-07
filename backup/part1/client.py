@@ -5,10 +5,11 @@ from getpass import getpass
 from getpass import getuser 
 import hashlib
 from time import sleep
-#import sqlite3
 from database import create_connection
 
 clear = lambda: os.system('clear')
+
+##############################################################################################################
 
 # MAIN: This is kind of like the CLI landing page for the application.
     ## From here, the user has two main functionalities: Register and Log In.
@@ -17,6 +18,10 @@ clear = lambda: os.system('clear')
     ## If the user types '3', they will actually also go to the login page.
     ## But, they will first see a message that shows how to delete an account.
     ## For security purposes, one can only delete an account once they are logged in.
+    ## If the user types '4', they can display the entire user list.
+    ## If the user types '5', they can search for a specific user.
+    ## If the user types '6', they can retrieve all messages from the current session.
+    ## If the user types '7', they can replay what the chat has looked like so far in the session.
 def main():
 
     # Rendering initial visuals; presenting users with login options
@@ -42,17 +47,19 @@ def main():
         if userChoice in ['1', '2', '3', '4', '5', '6', '7']:
             break
 
-    if userChoice == '1': # new user wants to register
+    if userChoice == '1': # new user wants to register ------------------------------------------------------
         Register()
 
-    elif userChoice == '2': # existing user wants to login
+    elif userChoice == '2': # existing user wants to login --------------------------------------------------
         Login()
 
-    elif userChoice == '3': # existing user wants to delete their account
+    elif userChoice == '3': # existing user wants to delete their account -----------------------------------
         print("First log in, then type '/delete account' to delete your account.")
     
     elif userChoice == '4': # user wants to print out all usernames
         lines_printed = 0
+
+        # We are storing usernames and passwords in userInfo.txt, so we need to read and print from here
         with open('userInfo.txt', 'r') as file:
             for line in file:
                 line_str = line.split()
@@ -61,6 +68,7 @@ def main():
                 if lines_printed == 0:
                     print("No usernames currently in database.")
         
+        # Redirects user to main menu or ends program after printing the list
         while True:
             returnChoice = input("Return to main menu? (Y) or (N)").lower()
             if returnChoice == 'y':
@@ -69,12 +77,13 @@ def main():
             elif returnChoice == 'n':
                 break
 
-    elif userChoice == '5': # user wants to search through users
+    elif userChoice == '5': # user wants to search through users ------------------------------------------
         print("Alphabetical lookup:")
         
         while True:
             alpha_range = input("Enter the first letter of the username you're looking for: ").upper()
             
+            # We just added a simple easter egg for fun :)
             if alpha_range == "EASTEREGG":
                 print("Congratulations! YOU FOUND THE EASTER EGG!")
                 print("ʕ•́ᴥ•̀ʔっ♡")
@@ -84,61 +93,92 @@ def main():
                 break
 
         lines_printed = 0
+
+        # We are storing usernames and passwords in userInfo.txt, so we need to read and print from here
         with open('userInfo.txt', 'r') as file:
             for line in file:
                 line_str = line.split()
                 if line_str[0][0] == alpha_range:
                     print(line_str[0])
                     lines_printed += 1
+                
             if lines_printed == 0 and alpha_range != 'EASTEREGG':
                 print("No usernames starting with " + alpha_range)
 
-    elif userChoice == '6': # Print messages for a specific session_id
+    elif userChoice == '6': # Print messages for a specific session_id --------------------------------------
+        
+        # We are storing the current session ID as a string in a txt file called session_id, so we need to retrieve it
         with open('session_id.txt', 'r') as f:
             session_id = f.read().strip()
 
         lines_printed = 0
+
+        # We are establishing a connection to our database so that we can perform a SQL query
         conn = create_connection()
         c = conn.cursor()
+
+        # Retrieves the SQL information from the table; prints the information in a formatted manner
         c.execute("SELECT sender, message, timestamp FROM messages WHERE session_id=?", (session_id,))
         results = c.fetchall()
+
         for row in results:
             print(row[0] + ": '" + row[1] + "'; sent at " + row[2])
             lines_printed += 1
+        
+        # If we pass through all of that logic with nothing to print, we know that no messages have yet been sent in the current session
         if lines_printed == 0:
             print("No messages have been sent within this session yet.")
 
+        # Now that we have re-generated the chat, we either redirect to the main menu or exit the program
         while True:
+            print("It is possible that new messages have been sent since you last checked.")
+            print("Therefore, we recommend that you choose Option 6 once more if you want to be safe.")
             returnChoice = input("Return to main menu? (Y) or (N)").lower()
+            
             if returnChoice == 'y':
                 main()
                 break
             elif returnChoice == 'n':
                 break
 
-    elif userChoice == '7': # Print messages for a specific session_id with waits, so it looks like you're rewatching
+    elif userChoice == '7': # 'Replay' messages for a specific session_id with waits ------------------------
+        # We are storing the current session ID as a string in a txt file called session_id, so we need to retrieve it
         with open('session_id.txt', 'r') as f:
             session_id = f.read().strip()
 
         lines_printed = 0
+
+        # We are establishing a connection to our database so that we can perform a SQL query
         conn = create_connection()
         c = conn.cursor()
+
+        # Retrieves the SQL information from the table; prints the information in a formatted manner
         c.execute("SELECT sender, message FROM messages WHERE session_id=?", (session_id,))
         results = c.fetchall()
+
         for row in results:
             print(row[0] + ": '" + row[1] + "'")
             lines_printed += 1
+
+            # We call sleep() so that it looks more like 'watching the chat back'
             sleep(1)
+
+        # If we pass through all of that logic with nothing to print, we know that no messages have yet been sent in the current session
         if lines_printed == 0:
             print("No messages have been sent within this session yet.")
 
+        # Now that we have re-generated the chat, we either redirect to the main menu or exit the program
         while True:
-            returnChoice = input("Return to main menu? (Y) or (N)").lower()
+            print("It is possible that new messages have been sent since you last checked.")
+            print("Therefore, we recommend that you choose Option 6 once more if you want to be safe.")
+            
             if returnChoice == 'y':
                 main()
                 break
             elif returnChoice == 'n':
                 break
+
+##############################################################################################################
 
 # REGISTER: Allows a new user to create a username and password to be entered into our database.
     ## Username and password can be used upon subsequent visits to login
@@ -190,7 +230,7 @@ def Register():
         main()
         ####### return to main menu
 
-
+##############################################################################################################
 
 # LOGIN: Allows an existing user to log into an account that has already been made and entered into our database.
     ## User must enter valid username and password
@@ -213,11 +253,11 @@ def Login():
 
     with open('authuser.txt') as f:
         lines = f.readlines()
+
     # Loop through the lines and add them to the list
     for line in lines:
         line = line.strip()
         authuser.append(line)
-
 
     while True:
 
@@ -226,7 +266,7 @@ def Login():
         userName = input("Enter Your User Name: ").title() # collects and sanitizes unverified username
         userName = sanitizeName(userName)
         
-        for authuser in authuser: 
+        for authuser in authuser: # checks to see if the user is already logged in
             if authuser == userName:
                 print("You are already logged in.")
                 input("You will now be redirected to the main menu. Press enter to continue:").lower()
@@ -269,9 +309,11 @@ def Login():
     print("If you would like to delete your account, please type '/delete account' at any time.")
     print("Your username is:", session_username)
 
+    # Establish a socket connection
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(('127.0.0.1', 55556))
 
+    # Allows the client to receive messages
     def receive():
         while True:
             try:
@@ -288,51 +330,60 @@ def Login():
                 client.close()
                 break 
 
+    # Allows the client to send messages
     def write():
         while True:
+
+            # The message format will be [username]: [message]
             message = '{}: {}'.format(session_username, input(''))
+
+            # Listen for if they're asking to delete their account
             if message[len(session_username)+2:].startswith('/delete'):
                 client.send(f'DELETE {session_username}'.encode('ascii'))
                 Delete(session_username)
+            
+            # Listen for if they're asking to log out of their account
             if message[len(session_username)+2:].startswith('/logout'):
                 rmAuthUser(session_username)
                 main()
+
+            # If they are just typing a normal message, then send it
             else: 
                 client.send(message.encode('ascii'))
 
-    # run client and write threads 
-
+    # Run client and write threads 
     receive_thread = threading.Thread(target=receive)
     receive_thread.start()
 
     write_thread = threading.Thread(target=write)
     write_thread.start()
 
+##############################################################################################################
 
 # ADDUSERINFO: Appends the user's information to the txt file with all logins and passwords
 def addUserInfo(userInfo: list):
     with open('userInfo.txt', 'a') as file:
         for info in userInfo:
             file.write(info)
-            file.write(' ') ## QUESTION: WHY DO WE NEED THE SPACE
+            file.write(' ')
         file.write('\n')
 
+##############################################################################################################
+
+# ADDNEWAUTH: Add's a logged-in user to authuser.txt to denote that they have an active session
 def addNewAuth(newauth: list):
      with open('authuser.txt', 'a') as file:
         for info in newauth:
             file.write(info)
         file.write('\n')
 
+##############################################################################################################
 
 # USERALREADYEXIST: Given a username, checks if an account exists under a specific username and password
     ## If a username has not been used yet, the function will return false
-
-## QUESTION: I DON'T UNDERSTAND WHY WE NEED THE 'NONE' AT THE BEGINNING
 def userAlreadyExist(userName, userPassword=None):
     
     if userPassword == None:
-
-        ## QUESTION: explain what this does
         with open('userInfo.txt', 'r') as file:
             for line in file:
                 line = line.split()
@@ -342,7 +393,6 @@ def userAlreadyExist(userName, userPassword=None):
 
         return False
 
-    # QUESTION: How do we even get to the else statement if we're initializing userPassword as none?
     else:
         userPassword = hash_password(userPassword) # hashes the password for enhanced security
         usersInfo = {} # initializes an empty dictionary for which to store the user info
@@ -358,10 +408,9 @@ def userAlreadyExist(userName, userPassword=None):
         if usersInfo == {}:
             return False # therefore, we know that the user does not yet exist
 
-        # QUESTION: WHY IS THIS THE RETURN VALUE    
         return usersInfo[userName] == userPassword
 
-
+##############################################################################################################
 
 # DISPLAYEXISTENCEMESSAGE: For use if the user is trying to register but already has an account.
     ## Presents the user with more helpful options since they were falsely trying to register.
@@ -386,7 +435,7 @@ def displayExistenceMessage():
             main()
             break
 
-
+##############################################################################################################
 
 # SANITIZENAME: Reformats the username to our standard for more standardized recording in the .txt document.
     ## Example: The string 'mallick prat' would become 'mallick-prat'
@@ -395,7 +444,7 @@ def sanitizeName(userName):
     userName = '-'.join(userName) # ['mallick', 'prat'] --> 'mallick-prat'
     return userName
 
-
+##############################################################################################################
 
 # SPAMLOGINS: Used when the user has tried logging in, either by entering an incorrect username or an incorrect password 10+ times.
     ## Since the user is repeatedly trying a path that is not helpful to them, they will be redirected.
@@ -418,13 +467,13 @@ def spamLogins():
         print("Redirecting back to main options.")
         main()
 
-
+##############################################################################################################
 
 # HASH_PASSWORD: Uses SHA256 encryption to hash the password for enhanced security
 def hash_password(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
-
+##############################################################################################################
 
 # CHECK_PASSWORD_HASH: Given a password and its hash, return a boolean for if the password is correct.
     ## With hash encryption, only the correct password will produce the unique hash.
@@ -432,15 +481,20 @@ def hash_password(password):
 def check_password_hash(password, hash):
     return hash_password(password) == hash
 
+##############################################################################################################
+
 # DELETE: Allows an existing, logged-in user to delete their account
     ## Requires user to confirm before proceeding
     ## If user does not type 'Y' or 'N', they will keep being prompted for input
 def Delete(session_username):
     clear()
+
+    # Rendering the CLI graphics
     print("DELETE ACCOUNT")
     print("--------")
     print()
-    while True:
+
+    while True: # Confirm delete; delete if 'y'
         confirm = input("Are you sure you want to delete? Type (Y) for yes and (N) for no: ").lower()
         if confirm == 'y':
             rmUserInfo(session_username)
@@ -450,6 +504,9 @@ def Delete(session_username):
         elif confirm != 'n':
             print("Please enter a valid input.")
 
+##############################################################################################################
+
+# RMUSERINFO: Deletes the user's info from userInfo.txt by writing the new user info to temp.txt and replacing the file
 def rmUserInfo(username):
     with open('userInfo.txt', 'r') as input:
         with open('temp.txt', 'w') as output:
@@ -459,6 +516,9 @@ def rmUserInfo(username):
     
     os.replace('temp.txt', 'userInfo.txt')
 
+##############################################################################################################
+
+# RMAUTHUSER: Same thing as rmUserInfo, except with the auth information to denote that this deleted/inactive account cannot have an active session
 def rmAuthUser(session_username):
     with open('authuser.txt', 'r') as input:
         with open('temp1.txt', 'w') as output:
@@ -466,6 +526,8 @@ def rmAuthUser(session_username):
                 if session_username not in user.strip(""):
                     output.write(user)
     os.replace('temp1.txt', 'authuser.txt')
+
+##############################################################################################################
 
 if __name__ == "__main__":
     main()
