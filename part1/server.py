@@ -18,6 +18,11 @@ server.listen()
 clients = []
 usernames = []
 
+# Read the current session ID from the file
+with open('session_id.txt', 'r') as f:
+    session_id = int(f.read().strip())
+
+
 # receive message from client, then broadcast to other clients; run this function in each thread per client. 
 def handle(client):
     while True:
@@ -92,4 +97,12 @@ def receive():
         thread.start()
 
 print("Server is listening for new connections...")
+
+# Increment the session ID and write it back to the file
+session_id += 1
+with open('session_id.txt', 'w') as f:
+    f.write(str(session_id))
+
+print(session_id)
+
 receive()
