@@ -60,17 +60,18 @@ def handle(client):
             break
 
 
+
 def broadcast(message):
     for client in clients:
         client.send(message)
 
 def sql_message(client, msg):
-    msg = client.recv(1024)
+    #msg = client.recv(1024)
     index = clients.index(client)
     conn = create_connection()
     c = conn.cursor()
     c.execute('''INSERT INTO messages (sender, message, session_id)
-                VALUES (?, ?, ?)''', (usernames[index], msg.decode('ascii'), session_id))
+                VALUES (?, ?, ?)''', (usernames[index], msg, session_id))
     conn.commit()
     conn.close()
 
