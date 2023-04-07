@@ -5,16 +5,16 @@ from database import create_connection
 
 clear = lambda: os.system('clear')
 
-#localhost / add functionality to define host/port connection --> ergo web server between different machines. 
+# Define host and port for the server to listen on
 host = '127.0.0.1'
 port = 55556
 
-# Starting Server
+# Create the server socket, bind it to the host and port, and listen for connections
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((host, port))
 server.listen()
 
-# Lists For Clients and Their Usernames
+# Lists to store clients and their usernames
 clients = []
 usernames = []
 current_msg = []
@@ -23,34 +23,37 @@ current_msg = []
 with open('session_id.txt', 'r') as f:
     session_id = int(f.read().strip())
 
-# receive message from client, then broadcast to other clients; run this function in each thread per client. 
+# Function to handle incoming messages from clients and broadcast them to other clients
 def handle(client):
     while True:
         try:
-            # Broadcasting Messages
+            # Receive the message from the client
             new_message = False
             msg = message = client.recv(1024)
             
+            # Decode the message and extract the text
             full_msg_text = msg.decode('ascii')
             msg_text = full_msg_text.split(": ")[1]
-            print(msg_text)
+            
+            # Add the message to the current message list and print its length
             current_msg.append(msg_text)
-            print("The length of current_msg is " + str(len(current_msg)))
 
+            # Flag that a new message has been received and insert it into the database
             new_message = True
-
             if new_message:
                 sql_message(client, current_msg[-1])
                 new_message = False
             
+            # If the message starts with "DELETE", delete the corresponding user account
             if msg.decode('ascii').startswith('DELETE'):
                 accountDeleted = msg.decode('ascii')[5:]
                 print(accountDeleted)
             else:
+                # Otherwise, broadcast the message to all clients
                 broadcast(message)
 
         except:
-            # Removing And Closing Clients
+            # Remove and close the client's connection if an error occurs
             index = clients.index(client)
             clients.remove(client)
             client.close()
@@ -59,14 +62,13 @@ def handle(client):
             usernames.remove(username)
             break
 
-
-
+# Function to broadcast a message to all clients
 def broadcast(message):
     for client in clients:
         client.send(message)
 
+# Function to insert a message into the database
 def sql_message(client, msg):
-    #msg = client.recv(1024)
     index = clients.index(client)
     conn = create_connection()
     c = conn.cursor()
@@ -75,9 +77,7 @@ def sql_message(client, msg):
     conn.commit()
     conn.close()
 
-# DELETE: Allows an existing, logged-in user to delete their account
-    ## Requires user to confirm before proceeding
-    ## If user does not type 'Y' or 'N', they will keep being prompted for input
+# Function to delete a user account
 def Delete(input):
     clear()
     print("DELETE ACCOUNT")
@@ -91,8 +91,7 @@ def Delete(input):
         elif confirm != 'n':
             print("Please enter a valid input.")
 
-
-
+# Function to remove a user's information from the user info file
 def rmUserInfo(username):
     with open('userInfo.txt', 'r') as input:
         with open('temp.txt', 'w') as output:
@@ -102,9 +101,10 @@ def rmUserInfo(username):
     
     os.replace('temp.txt', 'userInfo.txt')
 
+# Function to receive incoming connections from clients
 def receive():
     while True:
-        # accept server side connection
+        # Accept incoming connection from a client
         client, address = server.accept()
         print("Connected with {}".format(str(address)))
 
