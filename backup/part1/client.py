@@ -312,7 +312,7 @@ def Login():
     # Dictionary for the options of hosts and ports to connect to
     connection_dict = {
         '127.0.0.1': 55556,
-        '127.0.0.1': 8080
+        '127.0.0.1': 5000
     }
 
     # Establish a socket connection
@@ -326,7 +326,7 @@ def Login():
             break
         
         except StopIteration:
-            print("Could not connect to any server")
+            print("Could not connect to any server.")
             break
         
         except Exception as e:

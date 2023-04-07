@@ -7,7 +7,7 @@ clear = lambda: os.system('clear')
 
 # Define host and port for the server to listen on
 host = '127.0.0.1'
-port = 8080
+port = 5000
 
 # Create the server socket, bind it to the host and port, and listen for connections
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
