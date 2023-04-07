@@ -309,9 +309,29 @@ def Login():
     print("If you would like to delete your account, please type '/delete account' at any time.")
     print("Your username is:", session_username)
 
+    # Dictionary for the options of hosts and ports to connect to
+    connection_dict = {
+        '127.0.0.1': 55556,
+        '127.0.0.1': 8080
+    }
+
     # Establish a socket connection
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('127.0.0.1', 55556))
+    conn_iter = iter(connection_dict.items())
+    
+    while True:
+        try:
+            conn, port = next(conn_iter)
+            client.connect((conn, port))
+            break
+        
+        except StopIteration:
+            print("Could not connect to any server")
+            break
+        
+        except Exception as e:
+            print(f"Error connecting to {conn}:{port}: {str(e)}")
+
 
     # Allows the client to receive messages
     def receive():
