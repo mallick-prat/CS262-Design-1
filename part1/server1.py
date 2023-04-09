@@ -6,7 +6,7 @@ import re
 import os
 from turtle import update
 from termcolor import colored
-from database import create_connection
+from database1 import create_connection1
 import hashlib
 import threading
 import time
@@ -19,6 +19,19 @@ messageQueue = {}
 
 # A list of users.
 users = {}
+
+conn = create_connection1()
+c = conn.cursor()
+
+c.execute("SELECT username, password_hash FROM accounts")
+
+for row in c.fetchall():
+    username = row[0]
+    password_hash = row[1]
+    users[username] = password_hash
+
+c.close()
+conn.close()
 
 # A dictionary with usernames as keys and connection references as values.
 conRefs = {}
@@ -37,6 +50,10 @@ election_lock = threading.Lock()
 
 # Is this server running?
 running = True
+
+# Global variable for the session ID
+with open('session_id.txt', 'r') as f:
+    session_id = int(f.read().strip())
 
 def elect_leader():
     global active_server_index
@@ -61,6 +78,8 @@ def hash_password(password):
 def directMessage(connection, recipient_name, msg):
     """Send a message to the given user."""
 
+    global session_id
+
     print(f"\nRequest received to send message to {recipient_name}.\n")
 
     updateLive()
@@ -73,6 +92,19 @@ def directMessage(connection, recipient_name, msg):
     if recipient_name in users:
         sender_name = checkAccount(connection)
         if recipient_name in active:
+
+            with open('session_id.txt', 'r') as f:
+                session_id = int(f.read().strip())
+
+            # We are establishing a connection to our database so that we can perform a SQL query
+            conn = create_connection1()
+            c = conn.cursor()
+
+            c.execute('''INSERT INTO messages (sender, recipient, message, session_id)
+                        VALUES (?, ?, ?, ?)''', (sender_name, recipient_name, str(msg), session_id))
+            conn.commit()
+            conn.close()
+
             msg = colored(f"\n[{sender_name}] ", "grey") + msg + "\n"
             conRefs[recipient_name].send(msg.encode('UTF-8'))
             print(f"\nMessage sent to {recipient_name}.\n")
@@ -162,6 +194,16 @@ def register(msg_list, connection):
         return msg
 
     users[username] = hash_password(password)
+
+    # We are establishing a connection to our database so that we can perform a SQL query
+    conn = create_connection1()
+    c = conn.cursor()
+
+    c.execute('''INSERT INTO accounts (username, password_hash)
+                VALUES (?, ?)''', (username, hash_password(password)))
+    conn.commit()
+    conn.close()
+
     print(f"\nUser {username} account created\n")
     msg = colored(
         f"\nNew account created! User ID: {username}. Please log in.\n", "green")
@@ -236,10 +278,21 @@ def delete(msg_list, connection):
     print(f"\nUser {username} requesting account deletion.\n")
 
     if username in users:
-        users.remove(username)
+        del users[username]
+        #users.remove(username)
         active.remove(username)
         if messageQueue.get(username):
             messageQueue.pop(username)
+
+        # We are establishing a connection to our database so that we can perform a SQL query
+        conn = create_connection1()
+        c = conn.cursor()
+
+        c.execute("DELETE FROM accounts WHERE username=?", (username,))
+        
+        conn.commit()
+        conn.close()
+
         print(f"\nUser {username} account deleted.\n")
         msg = colored(f"\nAccount {username} has been deleted.\n", "green")
         return msg
@@ -373,6 +426,7 @@ def wire_protocol(connection):
 def Main():
     global active_server_index
     global running
+    global session_id
 
     # Start the leader election thread
     election_thread = threading.Thread(target=elect_leader)
@@ -404,11 +458,17 @@ def Main():
 
         print(f"Server started, listening on port {port}.\n")
 
+        # Increment the session ID and write it back to the file
+        session_id += 1
+        with open('session_id.txt', 'w') as f:
+            f.write(str(session_id))
+
         try:
             while True:
                 connection, address = server.accept()
                 print('\nConnected to:', address[0], ':', address[1])
                 start_new_thread(wire_protocol, (connection,))
+        
         except KeyboardInterrupt:
             running = False
             server.close()
