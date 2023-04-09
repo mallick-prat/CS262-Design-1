@@ -9,6 +9,16 @@ import socket
 import sys
 import select
 from termcolor import colored
+import random
+
+leader_elected = False
+
+
+def get_new_leader(servers):
+    global leader_elected
+    leader_index = random.randint(0, len(servers) - 1)
+    leader_elected = True
+    return leader_index
 
 def connect_to_server(ip, port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,19 +27,29 @@ def connect_to_server(ip, port):
     return server
 
 def Main():
+    global leader_elected
     
     # Connect IP & Port for both servers
-    servers = [("127.0.0.1", 50051), ("127.0.0.1", 50052)]
+    servers = [("127.0.0.1", 50051), ("127.0.0.1", 50052), ("127.0.0.1", 50053)]
 
     # Attempt to connect to the first server
-    current_server_index = 0
+    current_server_index = get_new_leader(servers)
     try:
         server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
+    
     except ConnectionRefusedError:
-        print("Server 1 is down. Switching to Server 2.")
-        current_server_index = 1
-        server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
+        print(f"Server {current_server_index + 1} is down. Initiating leader election.")
+        leader_elected = False
 
+    while not leader_elected:
+        current_server_index = get_new_leader(servers)
+        try:
+            server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
+        except ConnectionRefusedError:
+            print(f"Server {current_server_index + 1} is down. Initiating leader election.")
+            leader_elected = False
+
+    print(f"Connected to Server {current_server_index + 1}")
     # Intro message
 
     msg = "\nMessageBase -- CS 262\n"
@@ -75,10 +95,16 @@ def Main():
                     print(str(data.decode('UTF-8')))
 
         except (ConnectionError, socket.error):
-            print("Server connection closed. Switching to the other server.")
+            print("Server connection closed. Initiating leader election.")
             server.close()
-            current_server_index = (current_server_index + 1) % 2
-            server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
-
+            leader_elected = False
+            while not leader_elected:
+                current_server_index = get_new_leader(servers)
+                try:
+                    server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
+                except ConnectionRefusedError:
+                    print(f"Server {current_server_index + 1} is down. Initiating leader election.")
+                    leader_elected = False
+                    
 if __name__ == '__main__':
     Main()
