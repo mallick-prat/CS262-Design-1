@@ -9,85 +9,47 @@ import socket
 import sys
 import select
 from termcolor import colored
+import random
 
-# Global variables for connections and server status
-server = None 
-connected_to_main = True 
+leader_elected = False
 
-def serverConnect(ip, port):
-    global server 
+
+def get_new_leader(servers):
+    global leader_elected
+    leader_index = random.randint(0, len(servers) - 1)
+    leader_elected = True
+    return leader_index
+
+def connect_to_server(ip, port):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try: 
-        server.connect((ip, port))
-        print(f"Connected to server {ip}: {port}")
-        return server
-    except socket.error as e: 
-        print(f"Error connecting to the server")
-        return None 
-
-# global way to receive messages 
-def receive_message():
-    global server
-    try:
-        message = server.recv(1024).decode()
-        return message
-    except socket.error as e:
-        print(f"Error receiving message: {e}")
-        return None
-
-# global way to send messages - 
-def sendMessage(message):
-    global server 
-    try:
-        server.sendall(message.encode())
-    except socket.error as e:
-        print(f"Error sending message: {e}")
-        return
-
-# Heart beat monitoring
-def heartbeat(main_ip, main_port, backup_ip, backup_port):
-    global connected_to_main, server
-    while True:
-        time.sleep(10)
-        sendMessage("heartbeat")
-        response = receive_message()
-        if response != "heartbeat_ack":
-            if connected_to_main:
-                print("Main server is down, switching to backup server...")
-                server.close()
-                if serverConnect(backup_ip, backup_port):
-                    connected_to_main = False
-            else:
-                print("Backup server is down, switching to main server...")
-                server.close()
-                if serverConnect(main_ip, main_port):
-                    connected_to_main = True
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.connect((ip, port))
+    return server
 
 def Main():
+    global leader_elected
     
-    # Connect IP & Port
-    #ip = "127.0.0.1"
-    #port = 50051
+    # Connect IP & Port for both servers
+    servers = [("127.0.0.1", 50051), ("127.0.0.1", 50052), ("127.0.0.1", 50053)]
 
-    server1IP ="127.0.0.1"
-    server1Port= 50051
-
-    server2IP ="127.0.0.1"
-    server2Port= 50052
-
-    if not serverConnect(server1IP, server1Port):
-        print("Main server not connecting. Switching to backup server")
-        connected_to_main = False 
-        if not serverConnect(server2IP, server2Port):
-            print("All servers are not connecting")
-            return 
+    # Attempt to connect to the first server
+    current_server_index = get_new_leader(servers)
+    try:
+        server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
     
-    connection_monitor = threading.Thread(target=heartbeat, args=(server1IP, server1Port, server2IP, server2Port))
-    connection_monitor.daemon = True
-    connection_monitor.start()   
+    except ConnectionRefusedError:
+        print(f"Server {current_server_index + 1} is down. Initiating leader election.")
+        leader_elected = False
 
-    # TCP socket connection
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    while not leader_elected:
+        current_server_index = get_new_leader(servers)
+        try:
+            server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
+        except ConnectionRefusedError:
+            print(f"Server {current_server_index + 1} is down. Initiating leader election.")
+            leader_elected = False
+
+    print(f"Connected to Server {current_server_index + 1}")
     # Intro message
 
     msg = "\nMessageBase -- CS 262\n"
@@ -106,30 +68,43 @@ def Main():
     # Rendering initial visuals; presenting users with login options
     loggedIn = False 
 
-
     # Main loop for clients to receive and send messages to the server.
     while True:
 
         # List of input streams.
         sockets_list = [sys.stdin, server]
 
-        # Initialize read sockets to process inputs from the server.
-        read_sockets, _, _ = select.select(
-            sockets_list, [], [])
+        try:
+            # Initialize read sockets to process inputs from the server.
+            read_sockets, _, _ = select.select(sockets_list, [], [])
 
-        for socks in read_sockets:
+            for socks in read_sockets:
 
-            # Display messages received from the server.
-            if socks == server:
-                msg = socks.recv(4096)
-                print(msg.decode('UTF-8'))
+                # Display messages received from the server.
+                if socks == server:
+                    msg = socks.recv(4096)
+                    if not msg:
+                        raise ConnectionError("Server connection lost.")
+                    print(msg.decode('UTF-8'))
 
-            # Send requests to the server from the client.
-            else:
-                msg = sys.stdin.readline().strip()
-                server.send(msg.encode('UTF-8'))
-                data = server.recv(4096)
-                print(str(data.decode('UTF-8')))
+                # Send requests to the server from the client.
+                else:
+                    msg = sys.stdin.readline().strip()
+                    server.send(msg.encode('UTF-8'))
+                    data = server.recv(4096)
+                    print(str(data.decode('UTF-8')))
 
+        except (ConnectionError, socket.error):
+            print("Server connection closed. Initiating leader election.")
+            server.close()
+            leader_elected = False
+            while not leader_elected:
+                current_server_index = get_new_leader(servers)
+                try:
+                    server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
+                except ConnectionRefusedError:
+                    print(f"Server {current_server_index + 1} is down. Initiating leader election.")
+                    leader_elected = False
+                    
 if __name__ == '__main__':
     Main()

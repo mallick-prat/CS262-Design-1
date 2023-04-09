@@ -1,13 +1,15 @@
 from email import message
 import socket
 import random
-from _thread import * 
+from _thread import *
 import re
 import os
-from turtle import update 
+from turtle import update
 from termcolor import colored
 from database import create_connection
 import hashlib
+import threading
+import time
 
 
 # Define Data Structures 
@@ -23,6 +25,32 @@ conRefs = {}
 
 # A dictionary with active in users.
 active = []
+
+# list of servers
+server_addresses = [("127.0.0.1", 50052), ("127.0.0.1", 50053), ("127.0.0.1", 50051)]
+
+# An index to keep track of the current active server
+active_server_index = 0
+
+# Threading lock to only have one leader election
+election_lock = threading.Lock()
+
+# Is this server running?
+running = True
+
+def elect_leader():
+    global active_server_index
+    global running
+
+    while running:
+        # Acquire the lock to perform leader election
+        with election_lock:
+            # Increment the active server index
+            active_server_index = (active_server_index + 1) % len(server_addresses)
+
+        # Sleep for a random time before trying the next leader election
+        time.sleep(random.uniform(5, 10))
+
 
 def hash_password(password):
     """Hash a password using SHA-256."""
@@ -296,10 +324,6 @@ def wire_protocol(connection):
         elif option == '3':
             msg = delete(msg_list, connection)
 
-    
-
-
-
         # List all users and their status.
         # Usage: 4
         elif option == '4':
@@ -347,27 +371,51 @@ def wire_protocol(connection):
         connection.send(msg.encode('UTF-8'))
 
 def Main():
-    # Set IP address and local port.
-    ip = "127.0.0.1"
-    port = 50052
+    global active_server_index
+    global running
 
-    # Specify the address domain and read properties of the socket.
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    # Start the leader election thread
+    election_thread = threading.Thread(target=elect_leader)
+    election_thread.start()
 
-    # Connect to the server at the specified port and IP address.
-    server.bind((ip, port))
-
-    # Listen for a maximum of 100 active connections (can be adjusted).
-    server.listen(100)
-
-    print(f"Server started, listening on port {port}.\n")
+    ip, port = None, None  # Declare the variables outside the while loop
 
     # Main loop for the server to listen to client requests.
-    while True:
-        connection, address = server.accept()
-        print('\nConnected to:', address[0], ':', address[1])
-        start_new_thread(wire_protocol, (connection,))
+    while running:
+        # Check if this server is the active server
+        with election_lock:
+            ip, port = server_addresses[active_server_index]  # Assign values to the variables
+            if (ip, port) != server_addresses[active_server_index]:
+                time.sleep(1)
+                continue
+
+        # Set IP address and local port.
+        # ip, port = server_addresses[active_server_index]  # Remove this line
+
+        # Specify the address domain and read properties of the socket.
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        # Connect to the server at the specified port and IP address.
+        server.bind((ip, port))
+
+        # Listen for a maximum of 100 active connections (can be adjusted).
+        server.listen(100)
+
+        print(f"Server started, listening on port {port}.\n")
+
+        try:
+            while True:
+                connection, address = server.accept()
+                print('\nConnected to:', address[0], ':', address[1])
+                start_new_thread(wire_protocol, (connection,))
+        except KeyboardInterrupt:
+            running = False
+            server.close()
+
+    # Wait for the leader election thread to exit
+    election_thread.join()
+
 
 if __name__ == '__main__':
     Main()
