@@ -1,6 +1,6 @@
 import sqlite3 as lite
 
-conn = lite.connect('messages.db')
+conn = lite.connect('messages1.db')
 cur = conn.cursor()
 
 def print_messages():
