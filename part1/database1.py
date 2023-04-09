@@ -10,5 +10,11 @@ def create_connection1():
                   message TEXT NOT NULL,
                   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                   session_id INTEGER)''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS accounts
+                (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                password_hash TEXT NOT NULL)''')
+
     conn.commit()
     return conn

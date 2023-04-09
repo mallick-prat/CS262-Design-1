@@ -20,6 +20,19 @@ messageQueue = {}
 # A list of users.
 users = {}
 
+conn = create_connection1()
+c = conn.cursor()
+
+c.execute("SELECT username, password_hash FROM accounts")
+
+for row in c.fetchall():
+    username = row[0]
+    password_hash = row[1]
+    users[username] = password_hash
+
+c.close()
+conn.close()
+
 # A dictionary with usernames as keys and connection references as values.
 conRefs = {}
 
@@ -181,6 +194,16 @@ def register(msg_list, connection):
         return msg
 
     users[username] = hash_password(password)
+
+    # We are establishing a connection to our database so that we can perform a SQL query
+    conn = create_connection1()
+    c = conn.cursor()
+
+    c.execute('''INSERT INTO accounts (username, password_hash)
+                VALUES (?, ?)''', (username, hash_password(password)))
+    conn.commit()
+    conn.close()
+
     print(f"\nUser {username} account created\n")
     msg = colored(
         f"\nNew account created! User ID: {username}. Please log in.\n", "green")
@@ -255,10 +278,21 @@ def delete(msg_list, connection):
     print(f"\nUser {username} requesting account deletion.\n")
 
     if username in users:
-        users.remove(username)
+        del users[username]
+        #users.remove(username)
         active.remove(username)
         if messageQueue.get(username):
             messageQueue.pop(username)
+
+        # We are establishing a connection to our database so that we can perform a SQL query
+        conn = create_connection1()
+        c = conn.cursor()
+
+        c.execute("DELETE FROM accounts WHERE username=?", (username,))
+        
+        conn.commit()
+        conn.close()
+
         print(f"\nUser {username} account deleted.\n")
         msg = colored(f"\nAccount {username} has been deleted.\n", "green")
         return msg
