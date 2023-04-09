@@ -22,27 +22,3 @@
 
  <h2>/COMPUTERSTUFF</h2>
  Files we needed downloads-wise to make sure our code would work.
-
- <h1>HOW TO GET STARTED:</h1>
-
-    1. Make sure you are inside of the CS262-Design-1/part1 directory on each computer, with a terminal open on each computer.
-    2. Establish a localhost connection between the two computers.
-    3. Type "python3 server.py" into the 'server' computer, and "python3 client.py" into the 'client' computer (in that order).
-    4. Text as you please! Use "/logout" or press Control-C on either computer to end the connection.
-    5. Make sure you are inside of the CS262-Design-1/part1 directory on each computer, with a terminal open on each computer.
-    6. To use gRPC, type "python3 greet_server.py" into the 'server' computer, and "python3 greet_client.py" into the 'client' computer (in that order).
-    7. Have fun with the gRPC demos! Press Control-C on either computer to end the connection.
-
- Current dependencies:
- - getpass
- - stdiomask
- - hashlib
- - protobuf
- - betterproto[compiler]
- - grpcio-tools
- - @grpc/proto-loader
- - unittest
- - brew
- - pip
- - newest version of Python
- - sqlite3
