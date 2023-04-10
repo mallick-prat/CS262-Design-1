@@ -33,13 +33,16 @@ def Main():
     servers = [("127.0.0.1", 50051), ("127.0.0.1", 50052), ("127.0.0.1", 50053)]
 
     # Attempt to connect to the first server
-    current_server_index = get_new_leader(servers)
-    try:
-        server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
-    
-    except ConnectionRefusedError:
-        print(f"Server {current_server_index + 1} is down. Initiating leader election.")
-        leader_elected = False
+    current_server_index = 0
+    while not leader_elected:
+        try:
+            server = connect_to_server(servers[current_server_index][0], servers[current_server_index][1])
+            leader_elected = True
+            print(f"Connected to Server {current_server_index + 1}")
+        except ConnectionRefusedError:
+            print(f"Server {current_server_index + 1} is down. Initiating leader election.")
+            leader_elected = False
+            current_server_index = get_new_leader(servers)
 
     while not leader_elected:
         current_server_index = get_new_leader(servers)
