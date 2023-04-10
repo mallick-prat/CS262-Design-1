@@ -1,4 +1,4 @@
-# CS262-Design-MessageBase
+# CS262-Design-ZeroBase
 
 Welcome to our CS262 project, MessageBase! MessageBase is an interactive socket-style networking project that allows for simple chat functionality between a client and multiple servers.
 
