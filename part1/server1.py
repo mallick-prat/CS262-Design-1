@@ -7,6 +7,8 @@ import os
 from turtle import update
 from termcolor import colored
 from database1 import create_connection1
+from database2 import create_connection2
+from database3 import create_connection3
 import hashlib
 import threading
 import time
@@ -20,7 +22,7 @@ messageQueue = {}
 # A list of users.
 users = {}
 
-conn = create_connection1()
+conn = create_connection1() # Adds users from database 1 to the user list
 c = conn.cursor()
 
 c.execute("SELECT username, password_hash FROM accounts")
@@ -91,19 +93,37 @@ def directMessage(connection, recipient_name, msg):
 
     if recipient_name in users:
         sender_name = checkAccount(connection)
+        
+        with open('session_id.txt', 'r') as f:
+            session_id = int(f.read().strip())
+
+        # We are establishing a connection to our database so that we can perform a SQL query
+        
+        conn = create_connection1() # Adds to database 1
+        c = conn.cursor()
+
+        c.execute('''INSERT INTO messages (sender, recipient, message, session_id)
+                    VALUES (?, ?, ?, ?)''', (sender_name, recipient_name, str(msg), session_id))
+        conn.commit()
+        conn.close()
+
+        conn = create_connection2() # Adds to database 2
+        c = conn.cursor()
+
+        c.execute('''INSERT INTO messages (sender, recipient, message, session_id)
+                    VALUES (?, ?, ?, ?)''', (sender_name, recipient_name, str(msg), session_id))
+        conn.commit()
+        conn.close()
+
+        conn = create_connection3() # Adds to database 3
+        c = conn.cursor()
+
+        c.execute('''INSERT INTO messages (sender, recipient, message, session_id)
+                    VALUES (?, ?, ?, ?)''', (sender_name, recipient_name, str(msg), session_id))
+        conn.commit()
+        conn.close()
+
         if recipient_name in active:
-
-            with open('session_id.txt', 'r') as f:
-                session_id = int(f.read().strip())
-
-            # We are establishing a connection to our database so that we can perform a SQL query
-            conn = create_connection1()
-            c = conn.cursor()
-
-            c.execute('''INSERT INTO messages (sender, recipient, message, session_id)
-                        VALUES (?, ?, ?, ?)''', (sender_name, recipient_name, str(msg), session_id))
-            conn.commit()
-            conn.close()
 
             msg = colored(f"\n[{sender_name}] ", "grey") + msg + "\n"
             conRefs[recipient_name].send(msg.encode('UTF-8'))
@@ -196,7 +216,24 @@ def register(msg_list, connection):
     users[username] = hash_password(password)
 
     # We are establishing a connection to our database so that we can perform a SQL query
-    conn = create_connection1()
+    
+    conn = create_connection1() # Adds new user to database 1
+    c = conn.cursor()
+
+    c.execute('''INSERT INTO accounts (username, password_hash)
+                VALUES (?, ?)''', (username, hash_password(password)))
+    conn.commit()
+    conn.close()
+
+    conn = create_connection2() # Adds new user to database 2
+    c = conn.cursor()
+
+    c.execute('''INSERT INTO accounts (username, password_hash)
+                VALUES (?, ?)''', (username, hash_password(password)))
+    conn.commit()
+    conn.close()
+
+    conn = create_connection3() # Adds new user to database 3
     c = conn.cursor()
 
     c.execute('''INSERT INTO accounts (username, password_hash)
@@ -285,7 +322,24 @@ def delete(msg_list, connection):
             messageQueue.pop(username)
 
         # We are establishing a connection to our database so that we can perform a SQL query
-        conn = create_connection1()
+        
+        conn = create_connection1() # Delete user from database 1
+        c = conn.cursor()
+
+        c.execute("DELETE FROM accounts WHERE username=?", (username,))
+        
+        conn.commit()
+        conn.close()
+
+        conn = create_connection2() # Delete user from database 2
+        c = conn.cursor()
+
+        c.execute("DELETE FROM accounts WHERE username=?", (username,))
+        
+        conn.commit()
+        conn.close()
+
+        conn = create_connection3() # Delete user from database 3
         c = conn.cursor()
 
         c.execute("DELETE FROM accounts WHERE username=?", (username,))

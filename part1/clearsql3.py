@@ -11,5 +11,12 @@ while True:
         print("No table called 'messages' exists")
         break
 
+while True:
+    try:
+        c.execute('DELETE FROM accounts')
+    except:
+        print("No table called 'accounts' exists")
+        break
+
 conn.commit()
 conn.close()
